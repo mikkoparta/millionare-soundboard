@@ -73,29 +73,34 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
             user-select: none;
+            border-radius: 0;
         }
 
-        /* Wobble animation for playing state */
-        @keyframes wobble {
+        /* Wavy outline animation for playing state */
+        @keyframes borderWobble {
             0% {
-                transform: rotate(0deg);
+                border-radius: 0;
             }
 
             25% {
-                transform: rotate(-2deg);
+                border-radius: 4px 0 4px 0;
+            }
+
+            50% {
+                border-radius: 0 4px 0 4px;
             }
 
             75% {
-                transform: rotate(2deg);
+                border-radius: 4px 4px 0 0;
             }
 
             100% {
-                transform: rotate(0deg);
+                border-radius: 0;
             }
         }
 
         .sound-item.playing {
-            animation: wobble 0.5s infinite;
+            animation: borderWobble 0.7s infinite;
         }
 
         .sound-item .content {
@@ -175,7 +180,6 @@
             addActiveListeners(removeBtn);
             removeBtn.addEventListener('click', e => {
                 e.stopPropagation();
-                // stop if removing current
                 if (currentAudio === audio) {
                     audio.pause();
                     currentItem.classList.remove('playing');
