@@ -88,9 +88,8 @@
             padding-top: 100%;
             /* 1:1 Aspect Ratio */
             background: #4d4d4d;
-            border: 0.5px solid #fff;
+            border: 1px solid #cccccc;
             border-radius: 0;
-            box-shadow: none;
             overflow: hidden;
             cursor: pointer;
             transition: background 0.1s;
@@ -99,7 +98,7 @@
             user-select: none;
         }
 
-        .sound-item:active {
+        .sound-item.active {
             background: #000;
         }
 
@@ -124,7 +123,7 @@
             top: 4px;
             right: 4px;
             background: transparent;
-            border: 0.5px solid #fff;
+            border: 1px solid #cccccc;
             color: #fff;
             border-radius: 50%;
             width: 24px;
@@ -140,7 +139,7 @@
             user-select: none;
         }
 
-        .remove-btn:active {
+        .sound-item .remove-btn.active {
             background: #000;
         }
     </style>
@@ -156,10 +155,19 @@
         const fileInput = document.getElementById('fileInput');
         const soundGrid = document.getElementById('soundGrid');
 
+        function addActiveListeners(el) {
+            // Add touch and mouse listeners to toggle .active class
+            el.addEventListener('touchstart', () => el.classList.add('active'));
+            el.addEventListener('touchend', () => el.classList.remove('active'));
+            el.addEventListener('mousedown', () => el.classList.add('active'));
+            el.addEventListener('mouseup', () => el.classList.remove('active'));
+        }
+
         function addSoundButton(url, label) {
             const audio = new Audio(url);
             const item = document.createElement('div');
             item.className = 'sound-item';
+            addActiveListeners(item);
 
             const content = document.createElement('div');
             content.className = 'content';
@@ -168,6 +176,7 @@
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.textContent = '×';
+            addActiveListeners(removeBtn);
             removeBtn.addEventListener('click', e => {
                 e.stopPropagation();
                 soundGrid.removeChild(item);
