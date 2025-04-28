@@ -4,145 +4,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sound Grid</title>
-    <!-- Load a widely-supported tech-style monospaced web font -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-            font-family: 'JetBrains Mono', monospace;
-            background: #1a1a1a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 16px;
-        }
-
-        .upload-container {
-            width: 100%;
-            padding: 12px;
-            display: flex;
-            justify-content: flex-start;
-            box-sizing: border-box;
-            margin-bottom: 16px;
-        }
-
-        .upload-btn {
-            width: auto;
-            color: transparent;
-            font-family: 'JetBrains Mono', monospace;
-            transition: background 0.1s;
-        }
-
-        .upload-btn::-webkit-file-upload-button,
-        .upload-btn::file-selector-button {
-            appearance: none;
-            padding: 8px 12px;
-            font-size: 14px;
-            border: none;
-            background: #4d4d4d;
-            color: #fff;
-            border-radius: 999px;
-            cursor: pointer;
-            font-family: inherit;
-            transition: background 0.1s;
-        }
-
-        .upload-btn::-webkit-file-upload-button:active,
-        .upload-btn::file-selector-button:active {
-            background: #000;
-        }
-
-        .sound-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        .sound-item {
-            position: relative;
-            width: 100%;
-            padding-top: 100%;
-            background: #4d4d4d;
-            border: 1px solid #cccccc;
-            overflow: hidden;
-            cursor: pointer;
-            transition: background 0.1s;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-            user-select: none;
-            border-radius: 0;
-        }
-
-        /* Wavy outline animation for playing state */
-        @keyframes borderWobble {
-            0% {
-                border-radius: 0;
+    <title>Sound Grid</n>
+        <!-- Load a widely-supported tech-style monospaced web font -->
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+        <style>
+            body {
+                margin: 0;
+                font-family: 'JetBrains Mono', monospace;
+                background: #1a1a1a;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 16px;
             }
 
-            25% {
-                border-radius: 4px 0 4px 0;
+            .upload-container {
+                width: 100%;
+                padding: 12px;
+                display: flex;
+                justify-content: flex-start;
+                box-sizing: border-box;
+                margin-bottom: 16px;
             }
 
-            50% {
-                border-radius: 0 4px 0 4px;
+            .upload-btn {
+                width: auto;
+                color: transparent;
+                font-family: 'JetBrains Mono', monospace;
+                transition: background 0.1s;
             }
 
-            75% {
-                border-radius: 4px 4px 0 0;
+            .upload-btn::-webkit-file-upload-button,
+            .upload-btn::file-selector-button {
+                appearance: none;
+                padding: 8px 12px;
+                font-size: 14px;
+                border: none;
+                background: #4d4d4d;
+                color: #fff;
+                border-radius: 999px;
+                cursor: pointer;
+                font-family: inherit;
+                transition: background 0.1s;
             }
 
-            100% {
-                border-radius: 0;
+            .upload-btn::-webkit-file-upload-button:active,
+            .upload-btn::file-selector-button:active {
+                background: #000;
             }
-        }
 
-        .sound-item.playing {
-            animation: borderWobble 0.7s infinite;
-        }
+            .sound-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                width: 100%;
+                max-width: 600px;
+            }
 
-        .sound-item .content {
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            text-align: center;
-            padding: 8px;
-            color: #fff;
-        }
+            .sound-item {
+                position: relative;
+                width: 100%;
+                padding-top: 100%;
+                /* Maintain square */
+                background: #4d4d4d;
+                box-sizing: border-box;
+                overflow: hidden;
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+                user-select: none;
+            }
 
-        .sound-item .remove-btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: transparent;
-            border: 1px solid #cccccc;
-            color: #fff;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            line-height: 20px;
-            font-size: 16px;
-            text-align: center;
-            cursor: pointer;
-            padding: 0;
-            transition: background 0.1s;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-            user-select: none;
-        }
+            /* Outline SVG covers the element */
+            .sound-item .outline {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+            }
 
-        .sound-item .remove-btn.active {
-            background: #000;
-        }
-    </style>
+            /* Wavy outline animation filter */
+            @keyframes wave {
+                0% {
+                    filter: url(#turb1);
+                }
+
+                50% {
+                    filter: url(#turb2);
+                }
+
+                100% {
+                    filter: url(#turb1);
+                }
+            }
+
+            .sound-item.playing .outline rect {
+                animation: wave 1s infinite;
+            }
+
+            .sound-item .content {
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                text-align: center;
+                padding: 8px;
+                color: #fff;
+            }
+
+            .sound-item .remove-btn {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                background: transparent;
+                border: 1px solid #cccccc;
+                color: #fff;
+                border-radius: 50%;
+                width: 24px;
+                height: 24px;
+                line-height: 20px;
+                font-size: 16px;
+                text-align: center;
+                cursor: pointer;
+                padding: 0;
+                transition: background 0.1s;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+                user-select: none;
+            }
+
+            .remove-btn.active {
+                background: #000;
+            }
+        </style>
+        <!-- Define two turbulence filters for wave animation -->
+        <svg style="position:absolute;width:0;height:0;">
+            <defs>
+                <filter id="turb1">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.05" numOctaves="1" result="t1" />
+                    <feDisplacementMap in="SourceGraphic" in2="t1" scale="2" />
+                </filter>
+                <filter id="turb2">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.05 0.02" numOctaves="1" result="t2" />
+                    <feDisplacementMap in="SourceGraphic" in2="t2" scale="2" />
+                </filter>
+            </defs>
+        </svg>
 </head>
 
 <body>
@@ -158,10 +172,8 @@
         let currentItem = null;
 
         function addActiveListeners(el) {
-            el.addEventListener('touchstart', () => el.classList.add('active'));
-            el.addEventListener('touchend', () => el.classList.remove('active'));
-            el.addEventListener('mousedown', () => el.classList.add('active'));
-            el.addEventListener('mouseup', () => el.classList.remove('active'));
+            ['touchstart', 'mousedown'].forEach(e => el.addEventListener(e, () => el.classList.add('active')));
+            ['touchend', 'mouseup'].forEach(e => el.addEventListener(e, () => el.classList.remove('active')));
         }
 
         function addSoundButton(url, label) {
@@ -170,78 +182,68 @@
             item.className = 'sound-item';
             addActiveListeners(item);
 
+            // SVG outline
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(svgNS, 'svg');
+            svg.setAttribute('class', 'outline');
+            svg.setAttribute('viewBox', '0 0 100 100');
+            const rect = document.createElementNS(svgNS, 'rect');
+            rect.setAttribute('x', '0.5'); rect.setAttribute('y', '0.5');
+            rect.setAttribute('width', '99'); rect.setAttribute('height', '99');
+            rect.setAttribute('fill', 'none');
+            rect.setAttribute('stroke', '#cccccc');
+            rect.setAttribute('stroke-width', '1');
+            rect.setAttribute('filter', 'url(#turb1)');
+            svg.appendChild(rect);
+            item.appendChild(svg);
+
             const content = document.createElement('div');
-            content.className = 'content';
-            content.textContent = label.replace('.wav', '');
+            content.className = 'content'; content.textContent = label.replace('.wav', '');
 
             const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-btn';
-            removeBtn.textContent = '×';
+            removeBtn.className = 'remove-btn'; removeBtn.textContent = '×';
             addActiveListeners(removeBtn);
             removeBtn.addEventListener('click', e => {
                 e.stopPropagation();
                 if (currentAudio === audio) {
-                    audio.pause();
-                    currentItem.classList.remove('playing');
-                    currentAudio = null;
-                    currentItem = null;
+                    audio.pause(); currentItem.classList.remove('playing');
+                    currentAudio = null; currentItem = null;
                 }
                 soundGrid.removeChild(item);
             });
 
-            item.appendChild(content);
-            item.appendChild(removeBtn);
+            item.appendChild(content); item.appendChild(removeBtn);
             soundGrid.appendChild(item);
 
             item.addEventListener('click', () => {
-                // toggle play/pause if same item
                 if (currentAudio === audio) {
                     if (!audio.paused) {
-                        audio.pause();
-                        item.classList.remove('playing');
-                        currentAudio = null;
-                        currentItem = null;
+                        audio.pause(); item.classList.remove('playing');
+                        currentAudio = null; currentItem = null;
                     } else {
-                        audio.play();
-                        item.classList.add('playing');
-                        currentAudio = audio;
-                        currentItem = item;
+                        audio.play(); item.classList.add('playing');
+                        currentAudio = audio; currentItem = item;
                     }
                     return;
                 }
-                // stop previous
                 if (currentAudio && currentItem) {
-                    currentAudio.pause();
-                    currentItem.classList.remove('playing');
+                    currentAudio.pause(); currentItem.classList.remove('playing');
                 }
-                // play new
-                audio.currentTime = 0;
-                audio.play();
-                item.classList.add('playing');
-                currentAudio = audio;
-                currentItem = item;
+                audio.currentTime = 0; audio.play();
+                item.classList.add('playing'); currentAudio = audio; currentItem = item;
             });
         }
 
         // Load public sounds
         fetch('sounds.json')
-            .then(res => res.json())
-            .then(list => {
-                list.forEach(filename => {
-                    addSoundButton('sounds/' + filename, filename);
-                });
-            })
-            .catch(err => console.warn('No sounds.json found or invalid format', err));
+            .then(r => r.json())
+            .then(list => list.forEach(fn => addSoundButton('sounds/' + fn, fn)))
+            .catch(e => console.warn('sounds.json missing or bad', e));
 
-        // Handle uploads
-        fileInput.addEventListener('change', event => {
-            Array.from(event.target.files)
-                .filter(f => f.type === 'audio/wav')
-                .forEach(file => {
-                    const url = URL.createObjectURL(file);
-                    addSoundButton(url, file.name);
-                });
-            event.target.value = '';
+        fileInput.addEventListener('change', e => {
+            Array.from(e.target.files).filter(f => f.type === 'audio/wav')
+                .forEach(f => addSoundButton(URL.createObjectURL(f), f.name));
+            e.target.value = '';
         });
     </script>
 </body>
