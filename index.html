@@ -16,44 +16,61 @@
             padding: 16px;
         }
 
+        /* Header with upload input aligned left */
         .upload-container {
             width: 100%;
             padding: 12px;
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             box-sizing: border-box;
             margin-bottom: 16px;
         }
 
-        /* Style the file input's button for WebKit-based browsers */
+        /* Hide default filename text and set auto width */
+        .upload-btn {
+            width: auto;
+            color: transparent;
+            font-family: Monotxt, monospace;
+            transition: background 0.1s;
+        }
+
+        /* Style file button (WebKit) */
         .upload-btn::-webkit-file-upload-button {
             appearance: none;
-            padding: 10px 16px;
-            font-size: 16px;
+            padding: 8px 12px;
+            font-size: 14px;
             border: none;
             background: #4d4d4d;
             color: #fff;
             border-radius: 999px;
             cursor: pointer;
-            font-family: Monotxt, monospace;
+            font-family: inherit;
             transition: background 0.1s;
         }
 
-        /* Active state for the upload button */
         .upload-btn::-webkit-file-upload-button:active {
             background: #000;
         }
 
-        /* Other browsers */
-        .upload-btn {
-            font-family: Monotxt, monospace;
+        /* Style file button (Firefox & modern browsers) */
+        .upload-btn::file-selector-button {
+            appearance: none;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            background: #4d4d4d;
+            color: #fff;
+            border-radius: 999px;
+            cursor: pointer;
+            font-family: inherit;
             transition: background 0.1s;
         }
 
-        .upload-btn:active {
+        .upload-btn::file-selector-button:active {
             background: #000;
         }
 
+        /* Sound grid layout */
         .sound-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -62,6 +79,7 @@
             max-width: 600px;
         }
 
+        /* Individual sound items */
         .sound-item {
             position: relative;
             width: 100%;
@@ -74,9 +92,11 @@
             overflow: hidden;
             cursor: pointer;
             transition: background 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
         }
 
-        /* Active state for sound items */
         .sound-item:active {
             background: #000;
         }
@@ -96,6 +116,7 @@
             color: #fff;
         }
 
+        /* Close button */
         .sound-item .remove-btn {
             position: absolute;
             top: 4px;
@@ -112,6 +133,9 @@
             cursor: pointer;
             padding: 0;
             transition: background 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
         }
 
         .remove-btn:active {
@@ -121,12 +145,9 @@
 </head>
 
 <body>
-    <!-- Header bar with upload -->
     <div class="upload-container">
         <input type="file" id="fileInput" accept="audio/wav" class="upload-btn">
     </div>
-
-    <!-- Sound grid -->
     <div class="sound-grid" id="soundGrid"></div>
 
     <script>
