@@ -8,16 +8,33 @@
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: Monotxt, monospace;
+            background: #1a1a1a;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 16px;
-            background: #f4f4f4;
         }
 
         .upload-container {
+            width: 100%;
+            background: #333333;
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
             margin-bottom: 16px;
+        }
+
+        .upload-btn {
+            padding: 10px 16px;
+            font-size: 16px;
+            border: none;
+            background: #4d4d4d;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
         }
 
         .sound-grid {
@@ -33,9 +50,10 @@
             width: 100%;
             padding-top: 100%;
             /* 1:1 Aspect Ratio */
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: #4d4d4d;
+            border: 0.25pt solid #fff;
+            border-radius: 0;
+            box-shadow: none;
             overflow: hidden;
             cursor: pointer;
         }
@@ -52,49 +70,41 @@
             font-size: 14px;
             text-align: center;
             padding: 8px;
+            color: #fff;
         }
 
         .sound-item .remove-btn {
             position: absolute;
             top: 4px;
             right: 4px;
-            background: rgba(255, 0, 0, 0.8);
-            border: none;
+            background: transparent;
+            border: 1px solid #fff;
             color: #fff;
             border-radius: 50%;
             width: 24px;
             height: 24px;
-            line-height: 24px;
+            line-height: 20px;
             font-size: 16px;
+            text-align: center;
             cursor: pointer;
-        }
-
-        .upload-btn {
-            padding: 10px 16px;
-            font-size: 16px;
-            border: none;
-            background: #007bff;
-            color: #fff;
-            border-radius: 4px;
-            cursor: pointer;
+            padding: 0;
         }
     </style>
 </head>
 
 <body>
-    <!-- Local upload (session-only) -->
+    <!-- Header bar with upload -->
     <div class="upload-container">
         <input type="file" id="fileInput" accept="audio/wav" class="upload-btn">
     </div>
 
-    <!-- Public sounds grid -->
+    <!-- Sound grid -->
     <div class="sound-grid" id="soundGrid"></div>
 
     <script>
         const fileInput = document.getElementById('fileInput');
         const soundGrid = document.getElementById('soundGrid');
 
-        // Create and display a sound button
         function addSoundButton(url, label) {
             const audio = new Audio(url);
             const item = document.createElement('div');
@@ -122,7 +132,7 @@
             });
         }
 
-        // 1. Load "public" sounds from sounds.json manifest
+        // Load public sounds
         fetch('sounds.json')
             .then(res => res.json())
             .then(list => {
@@ -132,7 +142,7 @@
             })
             .catch(err => console.warn('No sounds.json found or invalid format', err));
 
-        // 2. Handle ad-hoc local uploads (not persisted)
+        // Handle uploads
         fileInput.addEventListener('change', event => {
             Array.from(event.target.files)
                 .filter(f => f.type === 'audio/wav')
@@ -143,21 +153,6 @@
             event.target.value = '';
         });
     </script>
-
-    <!--
-    To publish public sounds:
-    1. In your repo, create a folder named `sounds/` next to this index.html.
-    2. Add your .wav files (e.g. Coins Falling_6.wav, Lose_13.wav, etc.) into `sounds/`.
-    3. At the repo root, create or update `sounds.json` listing each filename, for example:
-       [
-         "Coins Falling_6.wav",
-         "Lose_13.wav",
-         "Machine Beep_21.wav",
-         "Pull Lever_3.wav"
-       ]
-    4. Commit & push both `sounds/` and `sounds.json` to GitHub. GitHub Pages will then serve
-       those files so that everyone sees them when they open your link.
-  -->
 </body>
 
 </html>
