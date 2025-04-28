@@ -132,36 +132,48 @@
         const soundGrid = document.getElementById('soundGrid');
         let currentAudio = null;
         let currentItem = null;
+        let currentAnimation = null;
+
+        // Create shared AudioContext
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function addActiveListeners(el) {
-            el.addEventListener('touchstart', () => el.classList.add('active'));
-            el.addEventListener('touchend', () => el.classList.remove('active'));
-            el.addEventListener('mousedown', () => el.classList.add('active'));
-            el.addEventListener('mouseup', () => el.classList.remove('active'));
+            ['touchstart', 'mousedown'].forEach(ev => el.addEventListener(ev, () => el.classList.add('active')));
+            ['touchend', 'mouseup'].forEach(ev => el.addEventListener(ev, () => el.classList.remove('active')));
         }
 
         function addSoundButton(url, label) {
+            // Setup audio element and Web Audio nodes
             const audio = new Audio(url);
+            const track = audioCtx.createMediaElementSource(audio);
+            const analyser = audioCtx.createAnalyser();
+            track.connect(analyser).connect(audioCtx.destination);
+            analyser.fftSize = 256;
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            // Item container
             const item = document.createElement('div');
             item.className = 'sound-item';
             addActiveListeners(item);
 
+            // Circle visual
+            const circle = document.createElement('div');
+            circle.className = 'pulse-circle';
+            item.appendChild(circle);
+
+            // Label
             const content = document.createElement('div');
             content.className = 'content';
             content.textContent = label.replace('.wav', '');
 
+            // Remove button
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.textContent = '×';
             addActiveListeners(removeBtn);
             removeBtn.addEventListener('click', e => {
                 e.stopPropagation();
-                if (currentAudio === audio) {
-                    audio.pause();
-                    currentItem.classList.remove('active');
-                    currentAudio = null;
-                    currentItem = null;
-                }
+                stopCurrent();
                 soundGrid.removeChild(item);
             });
 
@@ -169,31 +181,54 @@
             item.appendChild(removeBtn);
             soundGrid.appendChild(item);
 
+            // Animation loop for pulsing circle
+            function animatePulse() {
+                analyser.getByteTimeDomainData(dataArray);
+                // Calculate average deviation
+                let sum = 0;
+                for (let v of dataArray) sum += Math.abs(v - 128);
+                const avg = sum / dataArray.length;
+                const scale = 1 + avg / 128; // scale from 1 to ~2
+                circle.style.transform = `scale(${scale})`;
+                currentAnimation = requestAnimationFrame(animatePulse);
+            }
+
+            function stopCurrent() {
+                if (currentAudio && currentItem) {
+                    currentAudio.pause();
+                    currentItem.querySelector('.pulse-circle').style.display = 'none';
+                    cancelAnimationFrame(currentAnimation);
+                    currentAudio = null;
+                    currentItem.classList.remove('active');
+                }
+            }
+
             item.addEventListener('click', () => {
-                // If same, toggle pause
+                // Toggle same audio
                 if (currentAudio === audio) {
                     if (!audio.paused) {
                         audio.pause();
-                        item.classList.remove('active');
+                        circle.style.display = 'none';
+                        cancelAnimationFrame(currentAnimation);
                         currentAudio = null;
-                        currentItem = null;
+                        currentItem.classList.remove('active');
                     } else {
                         audio.play();
-                        item.classList.add('active');
+                        circle.style.display = 'block';
+                        currentAnimation = requestAnimationFrame(animatePulse);
                         currentAudio = audio;
                         currentItem = item;
                     }
                     return;
                 }
                 // Stop previous
-                if (currentAudio && currentItem) {
-                    currentAudio.pause();
-                    currentItem.classList.remove('active');
-                }
+                stopCurrent();
                 // Play new
                 audio.currentTime = 0;
                 audio.play();
                 item.classList.add('active');
+                circle.style.display = 'block';
+                currentAnimation = requestAnimationFrame(animatePulse);
                 currentAudio = audio;
                 currentItem = item;
             });
@@ -202,22 +237,15 @@
         // Load public sounds
         fetch('sounds.json')
             .then(res => res.json())
-            .then(list => {
-                list.forEach(filename => {
-                    addSoundButton('sounds/' + filename, filename);
-                });
-            })
-            .catch(err => console.warn('No sounds.json found or invalid format', err));
+            .then(list => list.forEach(fn => addSoundButton('sounds/' + fn, fn)))
+            .catch(_ => { });
 
         // Handle uploads
-        fileInput.addEventListener('change', event => {
-            Array.from(event.target.files)
+        fileInput.addEventListener('change', e => {
+            Array.from(e.target.files)
                 .filter(f => f.type === 'audio/wav')
-                .forEach(file => {
-                    const url = URL.createObjectURL(file);
-                    addSoundButton(url, file.name);
-                });
-            event.target.value = '';
+                .forEach(f => addSoundButton(URL.createObjectURL(f), f.name));
+            e.target.value = '';
         });
     </script>
 </body>
