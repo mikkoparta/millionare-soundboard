@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sound Grid</title>
-    <!-- Load a widely-supported tech-style monospaced web font -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -15,7 +14,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 16px;
+            padding: 16px
         }
 
         .upload-container {
@@ -24,14 +23,14 @@
             display: flex;
             justify-content: flex-start;
             box-sizing: border-box;
-            margin-bottom: 16px;
+            margin-bottom: 16px
         }
 
         .upload-btn {
             width: auto;
             color: transparent;
-            font-family: 'JetBrains Mono', monospace;
-            transition: background 0.1s;
+            font-family: inherit;
+            transition: background .1s
         }
 
         .upload-btn::-webkit-file-upload-button,
@@ -45,12 +44,12 @@
             border-radius: 999px;
             cursor: pointer;
             font-family: inherit;
-            transition: background 0.1s;
+            transition: background .1s
         }
 
         .upload-btn::-webkit-file-upload-button:active,
         .upload-btn::file-selector-button:active {
-            background: #000;
+            background: #000
         }
 
         .sound-grid {
@@ -58,7 +57,7 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             width: 100%;
-            max-width: 600px;
+            max-width: 600px
         }
 
         .sound-item {
@@ -66,20 +65,34 @@
             width: 100%;
             padding-top: 100%;
             background: #4d4d4d;
-            border: 1px solid #cccccc;
+            border: 1px solid #ccc;
             overflow: hidden;
             cursor: pointer;
-            transition: background 0.1s;
+            transition: background .1s;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
-            user-select: none;
+            user-select: none
         }
 
         .sound-item.active {
-            background: #000;
+            background: #000
         }
 
-        .sound-item .content {
+        .pulse-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60%;
+            height: 60%;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            pointer-events: none;
+            transition: transform .05s linear
+        }
+
+        .content {
             position: absolute;
             top: 0;
             right: 0;
@@ -91,15 +104,15 @@
             font-size: 14px;
             text-align: center;
             padding: 8px;
-            color: #fff;
+            color: #fff
         }
 
-        .sound-item .remove-btn {
+        .remove-btn {
             position: absolute;
             top: 4px;
             right: 4px;
             background: transparent;
-            border: 1px solid #cccccc;
+            border: 1px solid #ccc;
             color: #fff;
             border-radius: 50%;
             width: 24px;
@@ -109,144 +122,57 @@
             text-align: center;
             cursor: pointer;
             padding: 0;
-            transition: background 0.1s;
+            transition: background .1s;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
-            user-select: none;
+            user-select: none
         }
 
         .remove-btn.active {
-            background: #000;
+            background: #000
         }
     </style>
 </head>
 
 <body>
-    <div class="upload-container">
-        <input type="file" id="fileInput" accept="audio/wav" class="upload-btn">
-    </div>
+    <div class="upload-container"><input type="file" id="fileInput" accept="audio/wav" class="upload-btn"></div>
     <div class="sound-grid" id="soundGrid"></div>
 
     <script>
         const fileInput = document.getElementById('fileInput');
         const soundGrid = document.getElementById('soundGrid');
-        let currentAudio = null;
-        let currentItem = null;
-        let currentAnimation = null;
-
-        // Create shared AudioContext
+        let currentAudio = null, currentItem = null, animId = null;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        function addActiveListeners(el) {
-            ['touchstart', 'mousedown'].forEach(ev => el.addEventListener(ev, () => el.classList.add('active')));
-            ['touchend', 'mouseup'].forEach(ev => el.addEventListener(ev, () => el.classList.remove('active')));
+        function addActive(el) {
+            ['touchstart', 'mousedown'].forEach(e => el.addEventListener(e, () => el.classList.add('active')));
+            ['touchend', 'mouseup', 'mouseleave'].forEach(e => el.addEventListener(e, () => el.classList.remove('active')))
         }
 
-        function addSoundButton(url, label) {
-            // Setup audio element and Web Audio nodes
+        function makeButton(url, label) {
             const audio = new Audio(url);
             const track = audioCtx.createMediaElementSource(audio);
-            const analyser = audioCtx.createAnalyser();
-            track.connect(analyser).connect(audioCtx.destination);
-            analyser.fftSize = 256;
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const analyser = audioCtx.createAnalyser(); track.connect(analyser).connect(audioCtx.destination);
+            analyser.fftSize = 256; const data = new Uint8Array(analyser.frequencyBinCount);
+            const item = document.createElement('div'); item.className = 'sound-item'; addActive(item);
+            const circle = document.createElement('div'); circle.className = 'pulse-circle'; item.appendChild(circle);
+            const txt = document.createElement('div'); txt.className = 'content'; txt.textContent = label.replace('.wav', '');
+            const rm = document.createElement('button'); rm.className = 'remove-btn'; rm.textContent = '×'; addActive(rm);
+            rm.addEventListener('click', e => { e.stopPropagation(); stopCurrent(); soundGrid.removeChild(item); });
+            item.append(txt, rm); soundGrid.appendChild(item);
 
-            // Item container
-            const item = document.createElement('div');
-            item.className = 'sound-item';
-            addActiveListeners(item);
+            function pulse() { analyser.getByteTimeDomainData(data); let sum = 0; for (let v of data) sum += Math.abs(v - 128); const avg = sum / data.length; const scale = 1 + avg / 128; circle.style.transform = `translate(-50%,-50%) scale(${scale})`; animId = requestAnimationFrame(pulse); }
 
-            // Circle visual
-            const circle = document.createElement('div');
-            circle.className = 'pulse-circle';
-            item.appendChild(circle);
-
-            // Label
-            const content = document.createElement('div');
-            content.className = 'content';
-            content.textContent = label.replace('.wav', '');
-
-            // Remove button
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-btn';
-            removeBtn.textContent = '×';
-            addActiveListeners(removeBtn);
-            removeBtn.addEventListener('click', e => {
-                e.stopPropagation();
-                stopCurrent();
-                soundGrid.removeChild(item);
-            });
-
-            item.appendChild(content);
-            item.appendChild(removeBtn);
-            soundGrid.appendChild(item);
-
-            // Animation loop for pulsing circle
-            function animatePulse() {
-                analyser.getByteTimeDomainData(dataArray);
-                // Calculate average deviation
-                let sum = 0;
-                for (let v of dataArray) sum += Math.abs(v - 128);
-                const avg = sum / dataArray.length;
-                const scale = 1 + avg / 128; // scale from 1 to ~2
-                circle.style.transform = `scale(${scale})`;
-                currentAnimation = requestAnimationFrame(animatePulse);
-            }
-
-            function stopCurrent() {
-                if (currentAudio && currentItem) {
-                    currentAudio.pause();
-                    currentItem.querySelector('.pulse-circle').style.display = 'none';
-                    cancelAnimationFrame(currentAnimation);
-                    currentAudio = null;
-                    currentItem.classList.remove('active');
-                }
-            }
+            function stopCurrent() { if (currentAudio) { currentAudio.pause(); if (currentItem) { currentItem.querySelector('.pulse-circle').style.display = 'none'; currentItem.classList.remove('active'); } cancelAnimationFrame(animId); currentAudio = null; currentItem = null; } }
 
             item.addEventListener('click', () => {
-                // Toggle same audio
-                if (currentAudio === audio) {
-                    if (!audio.paused) {
-                        audio.pause();
-                        circle.style.display = 'none';
-                        cancelAnimationFrame(currentAnimation);
-                        currentAudio = null;
-                        currentItem.classList.remove('active');
-                    } else {
-                        audio.play();
-                        circle.style.display = 'block';
-                        currentAnimation = requestAnimationFrame(animatePulse);
-                        currentAudio = audio;
-                        currentItem = item;
-                    }
-                    return;
-                }
-                // Stop previous
-                stopCurrent();
-                // Play new
-                audio.currentTime = 0;
-                audio.play();
-                item.classList.add('active');
-                circle.style.display = 'block';
-                currentAnimation = requestAnimationFrame(animatePulse);
-                currentAudio = audio;
-                currentItem = item;
+                if (audioCtx.state === 'suspended') audioCtx.resume(); if (currentAudio === audio) { if (!audio.paused) { audio.pause(); circle.style.display = 'none'; cancelAnimationFrame(animId); currentAudio = null; currentItem.classList.remove('active'); currentItem = null; } else { audio.play(); circle.style.display = 'block'; pulse(); currentAudio = audio; currentItem = item; } return; }
+                stopCurrent(); audio.currentTime = 0; audio.play(); item.classList.add('active'); circle.style.display = 'block'; pulse(); currentAudio = audio; currentItem = item;
             });
         }
 
-        // Load public sounds
-        fetch('sounds.json')
-            .then(res => res.json())
-            .then(list => list.forEach(fn => addSoundButton('sounds/' + fn, fn)))
-            .catch(_ => { });
-
-        // Handle uploads
-        fileInput.addEventListener('change', e => {
-            Array.from(e.target.files)
-                .filter(f => f.type === 'audio/wav')
-                .forEach(f => addSoundButton(URL.createObjectURL(f), f.name));
-            e.target.value = '';
-        });
+        fetch('sounds.json').then(r => r.ok ? r.json() : []).then(arr => arr.forEach(f => makeButton('sounds/' + f, f))).catch(() => { });
+        fileInput.addEventListener('change', e => { Array.from(e.target.files).filter(f => f.type === 'audio/wav').forEach(f => makeButton(URL.createObjectURL(f), f.name)); e.target.value = ''; });
     </script>
 </body>
 
