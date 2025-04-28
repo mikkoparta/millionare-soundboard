@@ -91,43 +91,67 @@
         const fileInput = document.getElementById('fileInput');
         const soundGrid = document.getElementById('soundGrid');
 
-        fileInput.addEventListener('change', (event) => {
+        // Helper to create and insert a sound button
+        function addSoundButton(url, label) {
+            const audio = new Audio(url);
+            const item = document.createElement('div');
+            item.className = 'sound-item';
+
+            const content = document.createElement('div');
+            content.className = 'content';
+            content.textContent = label.replace('.wav', '');
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                soundGrid.removeChild(item);
+            });
+
+            item.appendChild(content);
+            item.appendChild(removeBtn);
+            soundGrid.appendChild(item);
+
+            item.addEventListener('click', () => {
+                audio.currentTime = 0;
+                audio.play();
+            });
+        }
+
+        // Load public sounds from sounds.json
+        fetch('sounds.json')
+            .then(res => res.json())
+            .then(list => {
+                list.forEach(filename => {
+                    addSoundButton('sounds/' + filename, filename);
+                });
+            })
+            .catch(err => console.warn('No sounds.json found or invalid format', err));
+
+        // Allow local uploads (not persisted)
+        fileInput.addEventListener('change', event => {
             const files = Array.from(event.target.files);
             files.forEach(file => {
                 if (file.type !== 'audio/wav') return;
                 const url = URL.createObjectURL(file);
-                const audio = new Audio(url);
-
-                const item = document.createElement('div');
-                item.className = 'sound-item';
-
-                const content = document.createElement('div');
-                content.className = 'content';
-                content.textContent = file.name.replace('.wav', '');
-
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'remove-btn';
-                removeBtn.textContent = '×';
-
-                removeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    soundGrid.removeChild(item);
-                });
-
-                item.appendChild(content);
-                item.appendChild(removeBtn);
-                soundGrid.appendChild(item);
-
-                item.addEventListener('click', () => {
-                    audio.currentTime = 0;
-                    audio.play();
-                });
+                addSoundButton(url, file.name);
             });
-            // reset input to allow same file upload again if needed
-            //comment testi
             event.target.value = '';
         });
     </script>
 </body>
 
 </html>
+
+<!--
+To make sounds “public”, create a folder named `sounds` alongside this file, add your .wav files there,
+and then create a `sounds.json` file listing all filenames, e.g.: 
+[
+  "beep.wav",
+  "boop.wav",
+  "click.wav"
+]
+
+Push both the `sounds` folder and `sounds.json` to your repo, and GitHub Pages will serve them.
+-->
