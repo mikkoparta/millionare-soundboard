@@ -74,7 +74,13 @@
             user-select: none
         }
 
+        /* temporary press */
         .sound-item.active {
+            background: #333
+        }
+
+        /* persistent while playing */
+        .sound-item.playing {
             background: #000
         }
 
@@ -144,35 +150,103 @@
         let currentAudio = null, currentItem = null, animId = null;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        function addActive(el) {
+        function addPressHighlight(el) {
             ['touchstart', 'mousedown'].forEach(e => el.addEventListener(e, () => el.classList.add('active')));
-            ['touchend', 'mouseup', 'mouseleave'].forEach(e => el.addEventListener(e, () => el.classList.remove('active')))
+            ['touchend', 'mouseup', 'mouseleave'].forEach(e => el.addEventListener(e, () => el.classList.remove('active')));
         }
 
         function makeButton(url, label) {
             const audio = new Audio(url);
             const track = audioCtx.createMediaElementSource(audio);
-            const analyser = audioCtx.createAnalyser(); track.connect(analyser).connect(audioCtx.destination);
-            analyser.fftSize = 256; const data = new Uint8Array(analyser.frequencyBinCount);
-            const item = document.createElement('div'); item.className = 'sound-item'; addActive(item);
-            const circle = document.createElement('div'); circle.className = 'pulse-circle'; item.appendChild(circle);
-            const txt = document.createElement('div'); txt.className = 'content'; txt.textContent = label.replace('.wav', '');
-            const rm = document.createElement('button'); rm.className = 'remove-btn'; rm.textContent = '×'; addActive(rm);
+            const analyser = audioCtx.createAnalyser();
+            track.connect(analyser).connect(audioCtx.destination);
+            analyser.fftSize = 256;
+            const data = new Uint8Array(analyser.frequencyBinCount);
+
+            const item = document.createElement('div');
+            item.className = 'sound-item';
+            addPressHighlight(item);
+
+            const circle = document.createElement('div');
+            circle.className = 'pulse-circle';
+            item.appendChild(circle);
+
+            const txt = document.createElement('div');
+            txt.className = 'content';
+            txt.textContent = label.replace('.wav', '');
+
+            const rm = document.createElement('button');
+            rm.className = 'remove-btn';
+            rm.textContent = '×';
+            addPressHighlight(rm);
+
+            function stopCurrent() {
+                if (currentAudio) {
+                    currentAudio.pause();
+                    cancelAnimationFrame(animId);
+                    if (currentItem) {
+                        currentItem.classList.remove('playing');
+                        currentItem.querySelector('.pulse-circle').style.display = 'none';
+                    }
+                    currentAudio = null;
+                    currentItem = null;
+                }
+            }
+
             rm.addEventListener('click', e => { e.stopPropagation(); stopCurrent(); soundGrid.removeChild(item); });
-            item.append(txt, rm); soundGrid.appendChild(item);
 
-            function pulse() { analyser.getByteTimeDomainData(data); let sum = 0; for (let v of data) sum += Math.abs(v - 128); const avg = sum / data.length; const scale = 1 + avg / 128; circle.style.transform = `translate(-50%,-50%) scale(${scale})`; animId = requestAnimationFrame(pulse); }
-
-            function stopCurrent() { if (currentAudio) { currentAudio.pause(); if (currentItem) { currentItem.querySelector('.pulse-circle').style.display = 'none'; currentItem.classList.remove('active'); } cancelAnimationFrame(animId); currentAudio = null; currentItem = null; } }
+            function pulse() {
+                analyser.getByteTimeDomainData(data);
+                let sum = 0; for (let v of data) sum += Math.abs(v - 128);
+                const scale = 1 + (sum / data.length) / 128;
+                circle.style.transform = `translate(-50%,-50%) scale(${scale})`;
+                animId = requestAnimationFrame(pulse);
+            }
 
             item.addEventListener('click', () => {
-                if (audioCtx.state === 'suspended') audioCtx.resume(); if (currentAudio === audio) { if (!audio.paused) { audio.pause(); circle.style.display = 'none'; cancelAnimationFrame(animId); currentAudio = null; currentItem.classList.remove('active'); currentItem = null; } else { audio.play(); circle.style.display = 'block'; pulse(); currentAudio = audio; currentItem = item; } return; }
-                stopCurrent(); audio.currentTime = 0; audio.play(); item.classList.add('active'); circle.style.display = 'block'; pulse(); currentAudio = audio; currentItem = item;
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                if (currentAudio === audio) {
+                    if (!audio.paused) { // pause
+                        audio.pause();
+                        item.classList.remove('playing');
+                        circle.style.display = 'none';
+                        cancelAnimationFrame(animId);
+                        currentAudio = null;
+                        currentItem = null;
+                    } else { // resume
+                        audio.play();
+                        item.classList.add('playing');
+                        circle.style.display = 'block';
+                        pulse();
+                        currentAudio = audio;
+                        currentItem = item;
+                    }
+                    return;
+                }
+
+                // start new sound
+                stopCurrent();
+                audio.currentTime = 0;
+                audio.play();
+                item.classList.add('playing');
+                circle.style.display = 'block';
+                pulse();
+                currentAudio = audio;
+                currentItem = item;
             });
+
+            item.append(txt, rm);
+            soundGrid.appendChild(item);
         }
 
+        // initial sounds
         fetch('sounds.json').then(r => r.ok ? r.json() : []).then(arr => arr.forEach(f => makeButton('sounds/' + f, f))).catch(() => { });
-        fileInput.addEventListener('change', e => { Array.from(e.target.files).filter(f => f.type === 'audio/wav').forEach(f => makeButton(URL.createObjectURL(f), f.name)); e.target.value = ''; });
+
+        fileInput.addEventListener('change', e => {
+            Array.from(e.target.files).filter(f => f.type === 'audio/wav').forEach(f => makeButton(URL.createObjectURL(f), f.name));
+            e.target.value = '';
+        });
     </script>
 </body>
 
