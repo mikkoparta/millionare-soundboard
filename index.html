@@ -188,7 +188,9 @@
 
             currentAudio.pause();
             try { currentAudio.currentTime = 0; } catch { }
-            cancelAnimationFrame(animId);
+            // Force buffer flush on iOS/Safari
+            try { currentAudio.load(); } catch { }
+            cancelAnimationFrame(animId); (animId);
 
             if (currentItem) {
                 currentItem.classList.remove('playing');
@@ -241,7 +243,7 @@
                 let sum = 0;
                 for (let v of data) sum += Math.abs(v - 128);
                 const target = 1 + (sum / data.length) / 200;  // calmer movement
-                smoothScale += (target - smoothScale) * 0.1;    // low-pass filter
+                smoothScale += (target - smoothScale) * 0.1;    // low‑pass filter
                 circle.style.transform = `translate(-50%, -50%) scale(${smoothScale})`;
                 animId = requestAnimationFrame(pulse);
             }
