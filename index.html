@@ -75,8 +75,27 @@
             user-select: none;
         }
 
-        .sound-item.active {
-            background: #000;
+        /* Wobble animation for playing state */
+        @keyframes wobble {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            25% {
+                transform: rotate(-2deg);
+            }
+
+            75% {
+                transform: rotate(2deg);
+            }
+
+            100% {
+                transform: rotate(0deg);
+            }
+        }
+
+        .sound-item.playing {
+            animation: wobble 0.5s infinite;
         }
 
         .sound-item .content {
@@ -131,6 +150,7 @@
         const fileInput = document.getElementById('fileInput');
         const soundGrid = document.getElementById('soundGrid');
         let currentAudio = null;
+        let currentItem = null;
 
         function addActiveListeners(el) {
             el.addEventListener('touchstart', () => el.classList.add('active'));
@@ -155,7 +175,13 @@
             addActiveListeners(removeBtn);
             removeBtn.addEventListener('click', e => {
                 e.stopPropagation();
-                if (currentAudio === audio) currentAudio.pause();
+                // stop if removing current
+                if (currentAudio === audio) {
+                    audio.pause();
+                    currentItem.classList.remove('playing');
+                    currentAudio = null;
+                    currentItem = null;
+                }
                 soundGrid.removeChild(item);
             });
 
@@ -164,15 +190,32 @@
             soundGrid.appendChild(item);
 
             item.addEventListener('click', () => {
-                // interrupt any currently playing audio
-                if (currentAudio && currentAudio !== audio) {
-                    currentAudio.pause();
-                    currentAudio.currentTime = 0;
+                // toggle play/pause if same item
+                if (currentAudio === audio) {
+                    if (!audio.paused) {
+                        audio.pause();
+                        item.classList.remove('playing');
+                        currentAudio = null;
+                        currentItem = null;
+                    } else {
+                        audio.play();
+                        item.classList.add('playing');
+                        currentAudio = audio;
+                        currentItem = item;
+                    }
+                    return;
                 }
-                // start this sound
+                // stop previous
+                if (currentAudio && currentItem) {
+                    currentAudio.pause();
+                    currentItem.classList.remove('playing');
+                }
+                // play new
                 audio.currentTime = 0;
                 audio.play();
+                item.classList.add('playing');
                 currentAudio = audio;
+                currentItem = item;
             });
         }
 
