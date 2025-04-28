@@ -18,7 +18,6 @@
             padding: 16px;
         }
 
-        /* Header with upload input aligned left */
         .upload-container {
             width: 100%;
             padding: 12px;
@@ -28,7 +27,6 @@
             margin-bottom: 16px;
         }
 
-        /* Hide default filename text and set auto width */
         .upload-btn {
             width: auto;
             color: transparent;
@@ -36,25 +34,7 @@
             transition: background 0.1s;
         }
 
-        /* Style file button (WebKit) */
-        .upload-btn::-webkit-file-upload-button {
-            appearance: none;
-            padding: 8px 12px;
-            font-size: 14px;
-            border: none;
-            background: #4d4d4d;
-            color: #fff;
-            border-radius: 999px;
-            cursor: pointer;
-            font-family: inherit;
-            transition: background 0.1s;
-        }
-
-        .upload-btn::-webkit-file-upload-button:active {
-            background: #000;
-        }
-
-        /* Style file button (Firefox & modern browsers) */
+        .upload-btn::-webkit-file-upload-button,
         .upload-btn::file-selector-button {
             appearance: none;
             padding: 8px 12px;
@@ -68,11 +48,11 @@
             transition: background 0.1s;
         }
 
+        .upload-btn::-webkit-file-upload-button:active,
         .upload-btn::file-selector-button:active {
             background: #000;
         }
 
-        /* Sound grid layout */
         .sound-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -81,15 +61,12 @@
             max-width: 600px;
         }
 
-        /* Individual sound items */
         .sound-item {
             position: relative;
             width: 100%;
             padding-top: 100%;
-            /* 1:1 Aspect Ratio */
             background: #4d4d4d;
             border: 1px solid #cccccc;
-            border-radius: 0;
             overflow: hidden;
             cursor: pointer;
             transition: background 0.1s;
@@ -117,7 +94,6 @@
             color: #fff;
         }
 
-        /* Close button */
         .sound-item .remove-btn {
             position: absolute;
             top: 4px;
@@ -154,9 +130,9 @@
     <script>
         const fileInput = document.getElementById('fileInput');
         const soundGrid = document.getElementById('soundGrid');
+        let currentAudio = null;
 
         function addActiveListeners(el) {
-            // Add touch and mouse listeners to toggle .active class
             el.addEventListener('touchstart', () => el.classList.add('active'));
             el.addEventListener('touchend', () => el.classList.remove('active'));
             el.addEventListener('mousedown', () => el.classList.add('active'));
@@ -179,6 +155,7 @@
             addActiveListeners(removeBtn);
             removeBtn.addEventListener('click', e => {
                 e.stopPropagation();
+                if (currentAudio === audio) currentAudio.pause();
                 soundGrid.removeChild(item);
             });
 
@@ -187,8 +164,15 @@
             soundGrid.appendChild(item);
 
             item.addEventListener('click', () => {
+                // interrupt any currently playing audio
+                if (currentAudio && currentAudio !== audio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                }
+                // start this sound
                 audio.currentTime = 0;
                 audio.play();
+                currentAudio = audio;
             });
         }
 
